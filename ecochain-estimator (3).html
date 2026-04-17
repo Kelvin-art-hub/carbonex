@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoChain Estimator — Supply Chain Carbon Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+:root {
+  --bg: #07090f;
+  --bg2: #0d1117;
+  --panel: rgba(17,24,39,0.85);
+  --panel2: rgba(22,30,44,0.9);
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --primary: #22d3a0;
+  --primary-dim: rgba(34,211,160,0.15);
+  --primary-glow: rgba(34,211,160,0.3);
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+  --scope1: #fbbf24;
+  --scope2: #60a5fa;
+  --scope3: #f87171;
+  --eco: #22d3a0;
+  --moderate: #fbbf24;
+  --high: #f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 10% 0%,rgba(34,211,160,0.06) 0%,transparent 50%),
+    radial-gradient(ellipse at 90% 10%,rgba(96,165,250,0.04) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(167,139,250,0.03) 0%,transparent 50%);
+  background-attachment:fixed;
+}
+.wrap{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
+
+/* HEADER */
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:1.5rem 0 2rem;border-bottom:1px solid var(--border);margin-bottom:2rem;
+}
+.logo{display:flex;align-items:center;gap:0.75rem}
+.logo-icon{
+  width:36px;height:36px;background:var(--primary-dim);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  border:1px solid rgba(34,211,160,0.3);
+}
+.logo h1{font-size:1.3rem;font-weight:700;letter-spacing:-0.3px}
+.logo span{color:var(--primary)}
+.nav{display:flex;gap:0.25rem;background:rgba(0,0,0,0.3);border:1px solid var(--border);padding:0.3rem;border-radius:12px;backdrop-filter:blur(10px)}
+.nav-btn{
+  background:transparent;border:none;color:var(--muted2);padding:0.5rem 1.1rem;
+  border-radius:8px;font-size:0.88rem;font-weight:500;font-family:inherit;cursor:pointer;
+  transition:all 0.25s;white-space:nowrap;
+}
+.nav-btn:hover:not(:disabled){color:var(--text);background:rgba(255,255,255,0.05)}
+.nav-btn.active{background:var(--panel2);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,0.3)}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* TABS */
+.tab-content{display:none;animation:fadeUp 0.35s ease forwards}
+.tab-content.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* PANELS */
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  padding:1.75rem;margin-bottom:1.5rem;backdrop-filter:blur(20px);
+  box-shadow:0 4px 24px rgba(0,0,0,0.2);
+}
+.panel-accent{border-color:rgba(34,211,160,0.2);background:linear-gradient(135deg,rgba(17,24,39,0.9),rgba(34,211,160,0.04))}
+.panel h2{font-size:1.1rem;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem}
+.panel h3{font-size:0.95rem;font-weight:600;color:var(--muted2);margin-bottom:1rem}
+.panel-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem}
+.panel-hdr h2{margin-bottom:0}
+
+/* FORMS */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1.25rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}
+.field{display:flex;flex-direction:column;gap:0.4rem}
+.field label{font-size:0.8rem;color:var(--muted2);font-weight:500}
+input,select,textarea{
+  background:rgba(7,9,15,0.7);border:1px solid var(--border2);border-radius:8px;
+  padding:0.7rem 0.9rem;color:var(--text);font-family:inherit;font-size:0.9rem;
+  transition:border-color 0.2s,box-shadow 0.2s;width:100%;
+}
+textarea{resize:vertical;min-height:80px}
+input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow);
+}
+select option{background:#1e293b}
+
+/* FILE DROP */
+.file-drop{
+  border:2px dashed var(--border);border-radius:8px;padding:1rem;
+  text-align:center;position:relative;color:var(--muted);font-size:0.85rem;
+  background:rgba(0,0,0,0.2);transition:all 0.2s;
+}
+.file-drop:hover{border-color:var(--primary-glow);background:var(--primary-dim)}
+.file-input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.link-btn{background:none;border:none;color:var(--primary);font-weight:600;cursor:pointer;text-decoration:underline;font-family:inherit;font-size:inherit}
+
+/* BUTTONS */
+.btn{
+  padding:0.65rem 1.3rem;border-radius:8px;font-family:inherit;
+  font-weight:600;font-size:0.88rem;cursor:pointer;transition:all 0.25s;border:none;
+  display:inline-flex;align-items:center;gap:0.4rem;
+}
+.btn-primary{background:var(--primary);color:#042a1e}
+.btn-primary:hover{background:#1fb88e;box-shadow:0 4px 16px var(--primary-glow)}
+.btn-secondary{background:rgba(255,255,255,0.07);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:rgba(255,255,255,0.12)}
+.btn-sm{padding:0.45rem 0.9rem;font-size:0.82rem;border-radius:6px}
+.btn-lg{padding:0.9rem 2.5rem;font-size:1rem;border-radius:10px}
+.btn-danger{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2);width:32px;height:32px;padding:0;justify-content:center;border-radius:6px;font-size:1.1rem}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-glow:hover{box-shadow:0 0 20px var(--primary-glow)}
+.analyze-footer{display:flex;flex-direction:column;align-items:center;gap:0.75rem;padding:2rem 0 0.5rem}
+.caption{font-size:0.77rem;color:var(--muted)}
+
+/* SPINNER */
+.spinner{width:16px;height:16px;border:2px solid rgba(4,42,30,0.4);border-top-color:#042a1e;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
+.hidden{display:none!important}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* VENDOR ROWS */
+.vendor-row{
+  display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr auto;
+  gap:0.75rem;background:rgba(0,0,0,0.2);padding:0.85rem;
+  border-radius:8px;margin-bottom:0.6rem;align-items:center;
+  border:1px solid transparent;transition:border-color 0.2s;
+}
+.vendor-row:hover{border-color:var(--border)}
+
+/* DATA FLOW */
+.flow-steps{display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap}
+.flow-step{background:rgba(255,255,255,0.06);padding:0.4rem 0.9rem;border-radius:6px;font-size:0.82rem;font-weight:500}
+.flow-arrow{color:var(--primary);font-weight:700}
+
+/* DASHBOARD */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;margin-bottom:1.5rem}
+.metric-card{
+  background:var(--panel);border:1px solid var(--border);padding:1.25rem;
+  border-radius:14px;position:relative;overflow:hidden;
+}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc-s1::before{background:var(--scope1)}.mc-s2::before{background:var(--scope2)}.mc-s3::before{background:var(--scope3)}.mc-total::before{background:var(--primary)}
+.mc-total{background:linear-gradient(135deg,rgba(17,24,39,0.9),rgba(34,211,160,0.08));border-color:rgba(34,211,160,0.2)}
+.metric-card h3{font-size:0.8rem;color:var(--muted2);margin-bottom:0.4rem;font-weight:500}
+.metric-val{font-size:2rem;font-weight:700;line-height:1}
+.metric-val span{font-size:0.85rem;font-weight:400;color:var(--muted2)}
+.metric-sub{font-size:0.75rem;color:var(--muted);margin-top:0.35rem}
+.trend{font-size:0.78rem;font-weight:600;margin-top:0.4rem}
+.trend.down{color:var(--primary)}.trend.up{color:var(--red)}
+
+.dash-stats{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.5rem;padding:1rem 1.5rem;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+.stat-pill{font-size:0.88rem;font-weight:600}
+
+.charts-grid{display:grid;grid-template-columns:1fr 2fr;gap:1.25rem;margin-bottom:1.5rem}
+.chart-panel{display:flex;flex-direction:column;align-items:center}
+
+.bottom-grid{display:grid;grid-template-columns:3fr 2fr;gap:1.25rem;margin-bottom:1.5rem}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:0.6rem 0.75rem;font-size:0.78rem;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500}
+td{padding:0.85rem 0.75rem;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.02)}
+tbody tr{cursor:pointer;transition:background 0.15s}
+tbody tr:hover{background:rgba(255,255,255,0.04)}
+tbody tr.active-row{background:rgba(34,211,160,0.08)!important}
+.bar-col{width:35%}
+.impact-bar-wrap{width:100%;background:rgba(0,0,0,0.3);height:6px;border-radius:3px;overflow:hidden}
+.impact-bar{height:100%;background:var(--scope3);border-radius:3px;transition:width 0.5s ease}
+.explain-panel{background:rgba(34,211,160,0.04);border:1px solid var(--primary-glow);padding:1.25rem;border-radius:8px;margin-top:1.25rem;font-size:0.88rem;line-height:1.6}
+.tbl-hdr{display:flex;justify-content:flex-start;align-items:center;margin-bottom:1rem}
+.tbl-hdr h3{margin-bottom:0;display:flex;align-items:center;gap:0.75rem}
+
+/* AI OPPORTUNITIES */
+.opp-list{display:flex;flex-direction:column;gap:0.85rem}
+.opp-item{background:rgba(34,211,160,0.04);border-left:3px solid var(--primary);padding:0.9rem 1rem;border-radius:0 8px 8px 0}
+.opp-item h4{color:var(--primary);font-size:0.9rem;margin-bottom:0.3rem;display:flex;justify-content:space-between;align-items:center}
+.opp-badge{font-size:0.7rem;color:var(--muted);font-weight:400}
+.opp-item p{font-size:0.82rem;line-height:1.5;color:var(--muted2);margin-bottom:0.25rem}
+.opp-reason{color:var(--blue)!important}
+.opp-save{font-size:0.8rem;font-weight:700;color:var(--scope1)}
+.loading-pulse{color:var(--muted);font-size:0.88rem;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+
+/* REPORT */
+.report-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.report-actions{display:flex;gap:0.75rem}
+.report-body{font-family:'DM Mono',monospace;white-space:pre-wrap;background:rgba(0,0,0,0.3);padding:1.5rem;border-radius:8px;font-size:0.82rem;line-height:1.7;color:#cbd5e1;max-height:500px;overflow-y:auto}
+.summary-panel h3{margin-bottom:0.75rem}
+#ai-summary{font-size:0.88rem;line-height:1.7}
+
+/* CHATBOT */
+.chat-wrap{display:flex;flex-direction:column;height:520px}
+.chat-messages{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;scroll-behavior:smooth}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.msg{max-width:82%;padding:0.75rem 1rem;border-radius:12px;font-size:0.87rem;line-height:1.6;animation:msgIn 0.2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.msg-user{align-self:flex-end;background:var(--primary);color:#042a1e;border-radius:12px 12px 2px 12px;font-weight:500}
+.msg-bot{align-self:flex-start;background:var(--panel2);border:1px solid var(--border);border-radius:12px 12px 12px 2px}
+.msg-typing{align-self:flex-start;background:var(--panel2);border:1px solid var(--border);padding:0.75rem 1rem;border-radius:12px;font-size:0.87rem;color:var(--muted)}
+.chat-input-row{display:flex;gap:0.6rem;padding:0.75rem;border-top:1px solid var(--border);background:rgba(0,0,0,0.2);border-radius:0 0 14px 14px}
+.chat-input-row input{border-radius:8px;padding:0.6rem 0.9rem;font-size:0.88rem}
+.chat-suggestions{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem;border-top:1px solid var(--border);background:rgba(0,0,0,0.1)}
+.suggestion-chip{
+  background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  padding:0.35rem 0.75rem;border-radius:20px;font-size:0.78rem;cursor:pointer;
+  color:var(--muted2);transition:all 0.2s;font-family:inherit;
+}
+.suggestion-chip:hover{background:var(--primary-dim);border-color:var(--primary-glow);color:var(--primary)}
+
+/* TREND ANALYSIS */
+.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem}
+.trend-insight{background:rgba(0,0,0,0.2);padding:1rem;border-radius:8px;border-left:3px solid var(--primary);font-size:0.85rem;line-height:1.5}
+.alert-box{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.25);padding:0.9rem 1.1rem;border-radius:8px;font-size:0.85rem;color:var(--red);display:flex;align-items:center;gap:0.6rem}
+.alert-green{background:rgba(34,211,160,0.06);border-color:rgba(34,211,160,0.25);color:var(--primary)}
+.trend-chart-wrap{height:240px;position:relative}
+.trend-years{display:flex;justify-content:space-between;margin-top:0.5rem;font-size:0.75rem;color:var(--muted)}
+.year-input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1rem}
+
+/* VEHICLE ECO MODULE */
+.vehicle-row{background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem}
+.vehicle-row-grid{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 1fr auto;gap:0.75rem;align-items:end}
+.eco-result-card{
+  background:var(--panel2);border:1px solid var(--border);border-radius:12px;
+  padding:1.25rem;margin-bottom:1rem;
+}
+.eco-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem}
+.eco-badge{
+  padding:0.3rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:700;
+}
+.badge-eco{background:rgba(34,211,160,0.15);color:var(--eco);border:1px solid rgba(34,211,160,0.3)}
+.badge-moderate{background:rgba(251,191,36,0.15);color:var(--moderate);border:1px solid rgba(251,191,36,0.3)}
+.badge-high{background:rgba(248,113,113,0.15);color:var(--high);border:1px solid rgba(248,113,113,0.3)}
+.eco-score-circle{
+  width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;border:3px solid;
+}
+.eco-score-circle.eco{border-color:var(--eco);color:var(--eco)}
+.eco-score-circle.moderate{border-color:var(--moderate);color:var(--moderate)}
+.eco-score-circle.high{border-color:var(--high);color:var(--high)}
+.eco-score-num{font-size:1.3rem;font-weight:700;line-height:1}
+.eco-score-label{font-size:0.6rem;color:var(--muted)}
+.eco-issues{margin-bottom:0.75rem}
+.eco-issues h4,.eco-recs h4{font-size:0.8rem;font-weight:600;color:var(--muted2);margin-bottom:0.4rem}
+.eco-issues ul,.eco-recs ul{padding-left:1.25rem;font-size:0.83rem;line-height:1.7;color:var(--muted2)}
+.eco-recs ul li{color:var(--text)}
+.eco-empty{text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem}
+
+
+/* ICON STYLES */
+.icon { display:inline-flex; align-items:center; justify-content:center; }
+.icon svg { width:1em; height:1em; stroke-width:2; vertical-align:middle; }
+.logo-icon svg { width:18px; height:18px; stroke:var(--primary); }
+.nav-icon { display:inline-flex; align-items:center; gap:0.35rem; }
+.nav-icon svg { width:14px; height:14px; }
+.h2-icon { display:inline-flex; align-items:center; gap:0.5rem; }
+.h2-icon svg { width:16px; height:16px; }
+
+/* SCROLLBAR GLOBAL */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .charts-grid,.bottom-grid,.trend-grid{grid-template-columns:1fr}
+  .vendor-row,.vehicle-row-grid{grid-template-columns:1fr 1fr}
+  .nav{flex-wrap:wrap;border-radius:12px}
+  header{flex-direction:column;gap:1rem;align-items:flex-start}
+}
+@media(max-width:600px){
+  .vendor-row,.vehicle-row-grid{grid-template-columns:1fr}
+  .metrics-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon"><i data-lucide="leaf"></i></div>
+    <h1>Eco<span>Chain</span> Estimator</h1>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" data-target="tab-input"><span class="nav-icon"><i data-lucide="clipboard-list"></i>Input Data</span></button>
+    <button class="nav-btn" data-target="tab-dashboard" id="dash-btn" disabled><span class="nav-icon"><i data-lucide="bar-chart-2"></i>Dashboard</span></button>
+    <button class="nav-btn" data-target="tab-trend" id="trend-btn" disabled><span class="nav-icon"><i data-lucide="trending-up"></i>Trend Analysis</span></button>
+    <button class="nav-btn" data-target="tab-vehicle" id="vehicle-btn"><span class="nav-icon"><i data-lucide="truck"></i>Eco-Vehicle</span></button>
+    <button class="nav-btn" data-target="tab-chat" id="chat-nav-btn"><span class="nav-icon"><i data-lucide="message-circle"></i>AI Assistant</span></button>
+    <button class="nav-btn" data-target="tab-report" id="report-btn" disabled><span class="nav-icon"><i data-lucide="file-text"></i>ESG Report</span></button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ======================== INPUT TAB ======================== -->
+<section id="tab-input" class="tab-content active">
+  <div class="panel">
+    <h2><span class="h2-icon"><i data-lucide="building-2"></i>Company Details</span></h2>
+    <div class="grid2">
+      <div class="field"><label>Company Name</label><input type="text" id="company-name" placeholder="e.g. Tata Motors Ltd"></div>
+      <div class="field"><label>Reporting Year</label><input type="number" id="reporting-year" value="2024"></div>
+      <div class="field">
+        <label>Bulk Upload (PDF/CSV)</label>
+        <div class="file-drop">
+          <span>Drag & Drop or <button class="link-btn" type="button">Browse</button></span>
+          <input type="file" id="bulk-upload" accept=".pdf,.csv" class="file-input">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel-accent">
+    <h2><span class="h2-icon"><i data-lucide="zap"></i>Scope 1 & 2 — Energy Usage</span></h2>
+    <div class="grid2">
+      <div class="field"><label>Natural Gas (MWh)</label><input type="number" id="gas-mwh" placeholder="0" min="0" step="any"></div>
+      <div class="field"><label>Electricity (MWh)</label><input type="number" id="elec-mwh" placeholder="0" min="0" step="any"></div>
+      <div class="field"><label>Diesel (Litres)</label><input type="number" id="diesel-l" placeholder="0" min="0" step="any"></div>
+      <div class="field"><label>Refrigerant (kg)</label><input type="number" id="refrigerant-kg" placeholder="0" min="0" step="any"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hdr">
+      <h2><span class="h2-icon"><i data-lucide="package"></i>Vendor & Transport Data (Scope 3)</span></h2>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" id="demo-btn"><span class="nav-icon"><i data-lucide="flask-conical"></i>Load Demo</span></button>
+        <button class="btn btn-secondary btn-sm" id="add-vendor-btn">+ Add Vendor</button>
+      </div>
+    </div>
+    <div id="vendor-list"></div>
+  </div>
+
+  <div class="panel" style="background:rgba(0,0,0,0.15)">
+    <h2><span class="h2-icon"><i data-lucide="settings"></i>How It Works</span></h2>
+    <div class="flow-steps">
+      <div class="flow-step">1. Enter Data</div><div class="flow-arrow">→</div>
+      <div class="flow-step">2. Apply Factors</div><div class="flow-arrow">→</div>
+      <div class="flow-step">3. AI Analysis</div><div class="flow-arrow">→</div>
+      <div class="flow-step">4. Get Insights</div>
+    </div>
+  </div>
+
+  <div class="analyze-footer">
+    <button id="analyze-btn" class="btn btn-primary btn-lg btn-glow">
+      <span id="analyze-text"><span class="nav-icon"><i data-lucide="activity"></i>Analyze Footprint</span></span>
+      <div class="spinner hidden" id="analyze-spinner"></div>
+    </button>
+    <p class="caption">Uses DEFRA 2024 emission factors · AI-powered smart analysis</p>
+  </div>
+</section>
+
+<!-- ======================== DASHBOARD TAB ======================== -->
+<section id="tab-dashboard" class="tab-content">
+  <div id="dashboard-empty" class="panel" style="text-align:center;padding:3rem;display:none">
+    <h2>No Data Yet</h2><p style="color:var(--muted);margin-top:0.5rem">Enter data and run analysis to see results.</p>
+  </div>
+  <div id="dashboard-content">
+    <div class="dash-stats">
+      <span class="stat-pill" id="dq-score">Data Quality: —</span>
+      <span class="stat-pill" id="conf-score">Confidence: —</span>
+      <span style="font-size:0.82rem;color:var(--muted)" id="dq-msg"></span>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card mc-s1">
+        <h3>Scope 1 · Direct</h3>
+        <div class="metric-val" id="ms1">0 <span>tCO₂e</span></div>
+        <div class="metric-sub">Gas · Diesel · Refrigerant</div>
+      </div>
+      <div class="metric-card mc-s2">
+        <h3>Scope 2 · Energy</h3>
+        <div class="metric-val" id="ms2">0 <span>tCO₂e</span></div>
+        <div class="metric-sub">Purchased Electricity</div>
+      </div>
+      <div class="metric-card mc-s3">
+        <h3>Scope 3 · Value Chain</h3>
+        <div class="metric-val" id="ms3">0 <span>tCO₂e</span></div>
+        <div class="metric-sub">Upstream Transport</div>
+      </div>
+      <div class="metric-card mc-total">
+        <h3>Total Emissions</h3>
+        <div class="metric-val" id="m-total">0 <span>tCO₂e</span></div>
+        <div class="trend" id="trend-ind"></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="panel chart-panel"><h3>Breakdown</h3><canvas id="doughnut-chart"></canvas></div>
+      <div class="panel chart-panel"><h3>By Category</h3><canvas id="bar-chart"></canvas></div>
+    </div>
+    <div class="bottom-grid">
+      <div class="panel">
+        <div class="tbl-hdr"><h3>Supplier Emissions <button id="reset-filters-btn" class="btn btn-secondary btn-sm hidden" style="margin-left:0.75rem">Reset</button></h3></div>
+        <table><thead><tr><th>Vendor</th><th>Location</th><th>Mode</th><th>tCO₂e</th><th class="bar-col">Impact</th></tr></thead>
+        <tbody id="supplier-tbody"></tbody></table>
+        <div id="explain-panel" class="explain-panel hidden">
+          <strong>Calculation Detail</strong>
+          <p id="explain-text" style="margin-top:0.4rem"></p>
+        </div>
+      </div>
+      <div class="panel">
+        <h3><span class="h2-icon"><i data-lucide="cpu"></i>AI Reduction Opportunities</span></h3>
+        <p id="ai-transparency" class="caption" style="margin-bottom:0.75rem"></p>
+        <div id="ai-opportunities" class="opp-list"><div class="loading-pulse">Analyzing insights…</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== TREND ANALYSIS TAB ======================== -->
+<section id="tab-trend" class="tab-content">
+  <div class="panel">
+    <h2><span class="h2-icon"><i data-lucide="calendar"></i>Multi-Year Emissions Data</span></h2>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.25rem">Enter historical emissions (tCO₂e) for up to 5 years to identify trends.</p>
+    <div class="year-input-grid" id="trend-year-inputs">
+      <div class="field"><label>Year 1</label><input type="number" class="trend-year-val" placeholder="e.g. 2020" step="0.1" min="0"></div>
+      <div class="field"><label>Year 2</label><input type="number" class="trend-year-val" placeholder="e.g. 2021" step="0.1" min="0"></div>
+      <div class="field"><label>Year 3</label><input type="number" class="trend-year-val" placeholder="e.g. 2022" step="0.1" min="0"></div>
+      <div class="field"><label>Year 4</label><input type="number" class="trend-year-val" placeholder="e.g. 2023" step="0.1" min="0"></div>
+      <div class="field"><label>Year 5 (Current)</label><input type="number" class="trend-year-val" placeholder="e.g. 2024" step="0.1" min="0"></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="load-trend-demo"><span class="nav-icon"><i data-lucide="flask-conical"></i>Load Demo Trend</span></button>
+      <button class="btn btn-secondary btn-sm" id="analyze-trend-btn"><span class="nav-icon"><i data-lucide="bar-chart-2"></i>Analyze Trend</span></button>
+    </div>
+  </div>
+
+  <div id="trend-results" class="hidden">
+    <div class="panel">
+      <h2><span class="h2-icon"><i data-lucide="trending-up"></i>Trend Chart</span></h2>
+      <div class="trend-chart-wrap"><canvas id="trend-chart"></canvas></div>
+    </div>
+    <div id="trend-alerts" style="margin-bottom:1.5rem"></div>
+    <div class="trend-grid">
+      <div class="panel">
+        <h3><span class="h2-icon"><i data-lucide="pin"></i>Key Insights</span></h3>
+        <div id="trend-insights" class="opp-list"></div>
+      </div>
+      <div class="panel">
+        <h3><span class="h2-icon"><i data-lucide="search"></i>Top Sources & Patterns</span></h3>
+        <div id="trend-patterns" style="font-size:0.86rem;line-height:1.8;color:var(--muted2)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== VEHICLE ECO TAB ======================== -->
+<section id="tab-vehicle" class="tab-content">
+  <div class="panel">
+    <div class="panel-hdr">
+      <h2><span class="h2-icon"><i data-lucide="truck"></i>Vehicle Eco-Analysis</span></h2>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" id="vehicle-demo-btn"><span class="nav-icon"><i data-lucide="flask-conical"></i>Load Demo Fleet</span></button>
+        <button class="btn btn-secondary btn-sm" id="add-vehicle-btn">+ Add Vehicle</button>
+      </div>
+    </div>
+    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:1.25rem">Add your transport fleet details to get eco-ratings and personalized recommendations.</p>
+    <div id="vehicle-list"></div>
+    <div style="margin-top:1rem;display:flex;gap:0.75rem">
+      <button class="btn btn-primary" id="analyze-vehicles-btn"><span class="nav-icon"><i data-lucide="search"></i>Analyze Fleet</span></button>
+    </div>
+  </div>
+  <div id="vehicle-results">
+    <div class="eco-empty" id="vehicle-empty-msg">Add vehicles above and click "Analyze Fleet" to see eco ratings.</div>
+    <div id="vehicle-cards"></div>
+  </div>
+</section>
+
+<!-- ======================== AI CHAT TAB ======================== -->
+<section id="tab-chat" class="tab-content">
+  <div class="panel" style="padding:0;overflow:hidden">
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.75rem">
+      <span style="font-size:1.2rem; display:inline-flex; align-items:center;"><i data-lucide="bot" style="width:22px;height:22px;stroke:var(--primary)"></i></span>
+      <div><h2 style="margin:0;font-size:1rem">EcoChain AI Assistant</h2><p style="font-size:0.78rem;color:var(--muted)">Ask me anything about your emissions data or sustainability</p></div>
+    </div>
+    <div class="chat-wrap">
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg msg-bot">
+          Hi! I'm your EcoChain AI assistant. I can help you understand your carbon footprint, explain emission results, and suggest ways to reduce your environmental impact.<br><br>
+          Try asking: <em>"Why are my emissions high?"</em> or <em>"How can I reduce transport emissions?"</em>
+        </div>
+      </div>
+      <div class="chat-suggestions">
+        <button class="suggestion-chip" onclick="sendSuggestion('Why is my emission high?')">Why is my emission high?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion('How can I reduce transport emissions?')">Reduce transport emissions?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion('What is the best eco-friendly logistics method?')">Best eco logistics method?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion('Explain my Scope 3 emissions')">Explain Scope 3</button>
+        <button class="suggestion-chip" onclick="sendSuggestion('What are DEFRA emission factors?')">What are DEFRA factors?</button>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask about your emissions or sustainability…" style="flex:1">
+        <button class="btn btn-primary btn-sm" id="chat-send-btn" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== ESG REPORT TAB ======================== -->
+<section id="tab-report" class="tab-content">
+  <div class="panel">
+    <div class="report-hdr">
+      <h2><span class="h2-icon"><i data-lucide="file-text"></i>GHG Protocol Standard Report</span></h2>
+      <div class="report-actions">
+        <button id="copy-csv" class="btn btn-secondary btn-sm">Copy CSV</button>
+        <button id="export-txt" class="btn btn-primary btn-sm">Export .txt</button>
+      </div>
+    </div>
+    <div class="report-body" id="report-content-body">No data analyzed yet. Run the analysis first.</div>
+  </div>
+  <div class="panel summary-panel">
+    <h3><span class="h2-icon"><i data-lucide="cpu"></i>AI Analysis Summary</span></h3>
+    <div id="ai-summary" style="font-size:0.88rem;line-height:1.7;color:var(--muted2)">Run the analysis to view the AI summary.</div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- VENDOR TEMPLATE -->
+<template id="vendor-template">
+  <div class="vendor-row">
+    <input type="text" class="v-name" placeholder="Vendor Name">
+    <input type="text" class="v-location" placeholder="Location (Country)">
+    <select class="v-mode">
+      <option value="truck">Truck</option>
+      <option value="rail">Rail</option>
+      <option value="ship">Ship</option>
+      <option value="air">Air</option>
+    </select>
+    <input type="number" class="v-weight" placeholder="Weight (Tonnes)" min="0" step="any">
+    <button type="button" class="btn btn-danger remove-vendor">×</button>
+  </div>
+</template>
+
+<script>
+// ============================
+// CONSTANTS & STATE
+// ============================
+const FACTORS = {
+  gas: 0.18274,
+  elec_uk: 0.20493,
+  diesel: 2.68524,
+  refrigerant: 2000,
+  transport: { truck: 0.10844, rail: 0.03549, ship: 0.01631, air: 0.60 }
+};
+
+let carbonData = {
+  scope1:0, scope2:0, scope3:0, total:0,
+  suppliers:[], aiInsights:null, reportText:"",
+  dataQuality:0, confidence:0, validRows:0, totalRows:0,
+  detailed:{ s1_gas:0, s1_diesel:0, s1_ref:0, elec_emissions:0 }
+};
+
+let charts = { doughnut:null, bar:null, trend:null };
+let chatHistory = [];
+
+// ============================
+// INIT
+// ============================
+document.addEventListener('DOMContentLoaded', () => {
+  setupTabs();
+  setupVendors();
+  setupAnalyze();
+  setupExport();
+  setupTrend();
+  setupVehicles();
+  setupChat();
+  addVendorRow();
+  addVehicleRow();
+  lucide.createIcons();
+});
+
+// ============================
+// TAB NAVIGATION
+// ============================
+function setupTabs() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+}
+
+// ============================
+// VENDORS
+// ============================
+function setupVendors() {
+  document.getElementById('add-vendor-btn').addEventListener('click', () => addVendorRow());
+  document.getElementById('demo-btn').addEventListener('click', loadDemoData);
+}
+
+function addVendorRow(data=null) {
+  const frag = document.getElementById('vendor-template').content.cloneNode(true);
+  const row = frag.querySelector('.vendor-row');
+  if (data) {
+    row.querySelector('.v-name').value = data.name;
+    row.querySelector('.v-location').value = data.loc;
+    row.querySelector('.v-mode').value = data.mode;
+    row.querySelector('.v-weight').value = data.weight;
+  }
+  row.querySelector('.remove-vendor').addEventListener('click', () => row.remove());
+  document.getElementById('vendor-list').appendChild(row);
+}
+
+function loadDemoData() {
+  document.getElementById('company-name').value = "Stark Industries";
+  document.getElementById('reporting-year').value = "2024";
+  document.getElementById('gas-mwh').value = 450;
+  document.getElementById('elec-mwh').value = 1200;
+  document.getElementById('diesel-l').value = 5000;
+  document.getElementById('refrigerant-kg').value = 12;
+  document.getElementById('vendor-list').innerHTML = '';
+  [
+    {name:"Acme Logistics",loc:"UK",mode:"truck",weight:50},
+    {name:"Global Freight",loc:"China",mode:"ship",weight:500},
+    {name:"Fast Air",loc:"USA",mode:"air",weight:10},
+    {name:"Euro Haul",loc:"Germany",mode:"rail",weight:120}
+  ].forEach(d => addVendorRow(d));
+  showToast("Demo data loaded!");
+}
+
+function estimateDistance(loc) {
+  const l = loc.toLowerCase();
+  if (l.includes('uk')||l.includes('london')||l.includes('england')) return 200;
+  if (l.includes('europe')||l.includes('france')||l.includes('germany')||l.includes('spain')||l.includes('italy')) return 1000;
+  if (l.includes('usa')||l.includes('america')||l.includes('canada')) return 6000;
+  if (l.includes('china')||l.includes('japan')||l.includes('korea')) return 9000;
+  if (l.includes('india')||l.includes('asia')||l.includes('bangladesh')) return 7500;
+  if (l.includes('africa')||l.includes('nigeria')||l.includes('kenya')) return 8000;
+  if (l.includes('australia')||l.includes('new zealand')) return 12000;
+  return 2000;
+}
+
+// ============================
+// GATHER DATA & CALCULATE
+// ============================
+function gatherData() {
+  const gas = (parseFloat(document.getElementById('gas-mwh').value)||0)*1000;
+  const elec = (parseFloat(document.getElementById('elec-mwh').value)||0)*1000;
+  const diesel = parseFloat(document.getElementById('diesel-l').value)||0;
+  const ref = parseFloat(document.getElementById('refrigerant-kg').value)||0;
+
+  const s1_gas = (gas * FACTORS.gas)/1000;
+  const s1_diesel = (diesel * FACTORS.diesel)/1000;
+  const s1_ref = (ref * FACTORS.refrigerant)/1000;
+  const scope1 = s1_gas + s1_diesel + s1_ref;
+  const scope2 = (elec * FACTORS.elec_uk)/1000;
+
+  let suppliers=[], scope3=0, totalRows=0, validRows=0;
+  document.querySelectorAll('.vendor-row').forEach(row => {
+    totalRows++;
+    const name = row.querySelector('.v-name').value.trim();
+    const loc = row.querySelector('.v-location').value.trim();
+    const mode = row.querySelector('.v-mode').value;
+    const weight = parseFloat(row.querySelector('.v-weight').value);
+    if (name && loc && !isNaN(weight) && weight>0) {
+      validRows++;
+      const dist = estimateDistance(loc);
+      const tKm = weight * dist;
+      const em = (tKm * FACTORS.transport[mode])/1000;
+      scope3 += em;
+      suppliers.push({name, location:loc, mode, weight, distance:dist, emissions:em});
+    }
+  });
+
+  const hasSys = (gas>0||elec>0||diesel>0||ref>0);
+  const dq = totalRows===0 ? (hasSys?100:0) : Math.round((validRows/totalRows)*100);
+  const conf = Math.min(Math.round(dq*0.9+(hasSys?10:0)),100);
+
+  carbonData = {
+    scope1, scope2, scope3, total: scope1+scope2+scope3,
+    suppliers, detailed:{ s1_gas, s1_diesel, s1_ref, elec_emissions:scope2 },
+    dataQuality:dq, confidence:conf, totalRows, validRows
+  };
+  return { company: document.getElementById('company-name').value||"Company", year: document.getElementById('reporting-year').value||"2024", inputData: carbonData };
+}
+
+// ============================
+// ANALYZE BUTTON
+// ============================
+function setupAnalyze() {
+  document.getElementById('analyze-btn').addEventListener('click', async () => {
+    const txt = document.getElementById('analyze-text');
+    const spin = document.getElementById('analyze-spinner');
+    txt.textContent = "Processing…"; spin.classList.remove('hidden');
+    document.getElementById('analyze-btn').disabled = true;
+
+    document.getElementById('dash-btn').disabled = false;
+    document.getElementById('trend-btn').disabled = false;
+    document.getElementById('report-btn').disabled = false;
+
+    const payload = gatherData();
+
+    setTimeout(async () => {
+      updateDashboard(payload);
+      generateReportText(payload);
+      performSmartAnalysis(payload);
+
+      txt.textContent = "Analyze Footprint"; spin.classList.add('hidden');
+      document.getElementById('analyze-btn').disabled = false;
+
+      if (carbonData.total>0||carbonData.totalRows>0) {
+        document.getElementById('dash-btn').click();
+      }
+    }, 600);
+  });
+}
+
+// ============================
+// UPDATE DASHBOARD
+// ============================
+function updateDashboard(payload) {
+  const c = carbonData;
+  if (c.total===0 && c.totalRows===0) {
+    document.getElementById('dashboard-empty').style.display='block';
+    document.getElementById('dashboard-content').style.display='none';
+    return;
+  }
+  document.getElementById('dashboard-empty').style.display='none';
+  document.getElementById('dashboard-content').style.display='block';
+
+  document.getElementById('ms1').innerHTML = `${c.scope1.toFixed(1)} <span>tCO₂e</span>`;
+  document.getElementById('ms2').innerHTML = `${c.scope2.toFixed(1)} <span>tCO₂e</span>`;
+  document.getElementById('ms3').innerHTML = `${c.scope3.toFixed(1)} <span>tCO₂e</span>`;
+  document.getElementById('m-total').innerHTML = `${c.total.toFixed(1)} <span>tCO₂e</span>`;
+
+  const v = (Math.random()*20-10);
+  const ti = document.getElementById('trend-ind');
+  ti.textContent = `${v>0?'+':''}${v.toFixed(1)}% vs last year`;
+  ti.className = `trend ${v>0?'up':'down'}`;
+
+  document.getElementById('dq-score').textContent = `Data Quality: ${c.dataQuality}%`;
+  document.getElementById('conf-score').textContent = `Confidence: ${c.confidence}%`;
+  document.getElementById('dq-msg').textContent = c.validRows>0 ? `${c.validRows} of ${c.totalRows} vendor rows valid` : '';
+
+  // Charts
+  const cColors = ['#fbbf24','#60a5fa','#f87171'];
+  if (charts.doughnut) charts.doughnut.destroy();
+  charts.doughnut = new Chart(document.getElementById('doughnut-chart'), {
+    type:'doughnut',
+    data:{ labels:['Scope 1','Scope 2','Scope 3'], datasets:[{ data:[c.scope1,c.scope2,c.scope3], backgroundColor:cColors, borderWidth:2, borderColor:'#07090f' }] },
+    options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#94a3b8', font:{size:11} } } }, cutout:'65%' }
+  });
+
+  const cats = ['Natural Gas','Electricity','Diesel','Refrigerant','Transport'];
+  const catVals = [c.detailed.s1_gas, c.detailed.elec_emissions, c.detailed.s1_diesel, c.detailed.s1_ref, c.scope3];
+  if (charts.bar) charts.bar.destroy();
+  charts.bar = new Chart(document.getElementById('bar-chart'), {
+    type:'bar',
+    data:{ labels:cats, datasets:[{ data:catVals, backgroundColor:['#fbbf24','#60a5fa','#f87171','#a78bfa','#34d399'], borderRadius:6, borderSkipped:false }] },
+    options:{ responsive:true, plugins:{ legend:{display:false} }, scales:{ x:{ ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.03)'} }, y:{ ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} } } }
+  });
+
+  // Supplier table
+  const tbody = document.getElementById('supplier-tbody');
+  tbody.innerHTML='';
+  const maxEm = Math.max(...c.suppliers.map(s=>s.emissions),0.01);
+  c.suppliers.sort((a,b)=>b.emissions-a.emissions).forEach(s => {
+    const pct = Math.round((s.emissions/maxEm)*100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${s.name}</strong></td><td>${s.location}</td><td style="color:var(--muted2)">${s.mode}</td><td><strong>${s.emissions.toFixed(2)}</strong></td>
+    <td class="bar-col"><div class="impact-bar-wrap"><div class="impact-bar" style="width:${pct}%"></div></div></td>`;
+    tr.addEventListener('click', () => {
+      document.querySelectorAll('#supplier-tbody tr').forEach(r=>r.classList.remove('active-row'));
+      tr.classList.add('active-row');
+      const ep = document.getElementById('explain-panel');
+      ep.classList.remove('hidden');
+      document.getElementById('explain-text').textContent =
+        `${s.name} (${s.mode}, ${s.location}): ${s.weight}t × ${s.distance}km × ${FACTORS.transport[s.mode]} kgCO₂e/tonne-km = ${s.emissions.toFixed(3)} tCO₂e`;
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================
+// SMART ANALYSIS (RULES)
+// ============================
+function performSmartAnalysis(payload) {
+  const data = carbonData;
+  if(data.total===0) return;
+
+  const pctS3 = ((data.scope3/data.total)*100)||0;
+  const summaries=[], extraction=[], opps=[];
+
+  summaries.push(`Total footprint: ${data.total.toFixed(1)} tCO₂e.`);
+
+  if(pctS3>60) {
+    extraction.push("Scope 3 supply chain transport accounts for over 60% of total emissions — this is your primary reduction opportunity.");
+    summaries.push("Supply chain logistics is your biggest emissions driver.");
+  } else {
+    extraction.push("Direct operations (Scope 1 & 2) contribute substantially — focus on on-site energy efficiency first.");
+  }
+
+  let maxSupp=null, airSupp=null;
+  data.suppliers.forEach(s => {
+    if(!maxSupp||s.emissions>maxSupp.emissions) maxSupp=s;
+    if(s.mode==='air') airSupp=s;
+  });
+
+  if(maxSupp) extraction.push(`${maxSupp.name} is your highest-emitting supplier at ${maxSupp.emissions.toFixed(1)} tCO₂e.`);
+
+  if(airSupp) opps.push({
+    title:"Replace Air Freight with Ocean/Rail",
+    desc:`Supplier ${airSupp.name} uses air freight, which emits ~20× more than rail. Switching to sea shipping would dramatically cut this.`,
+    reason:"Air has a factor of 0.60 kg/tonne-km vs 0.016 for ship.",
+    savings:(airSupp.emissions*0.85).toFixed(1), priority:"High Priority"
+  });
+
+  if(data.detailed.elec_emissions>0) opps.push({
+    title:"Switch to Renewable Electricity",
+    desc:"Move to a 100% renewable energy contract (REGO-backed). This eliminates your entire Scope 2 footprint at minimal cost.",
+    reason:"Drops Scope 2 emissions to near zero.",
+    savings:data.detailed.elec_emissions.toFixed(1), priority:"Medium Priority"
+  });
+
+  if(data.detailed.s1_diesel>0) opps.push({
+    title:"Electrify Diesel Fleet & Equipment",
+    desc:"Phase out diesel-powered vehicles and generators. Electric alternatives eliminate direct combustion emissions.",
+    reason:"Removes site-level combustion entirely.",
+    savings:(data.detailed.s1_diesel*0.75).toFixed(1), priority:"Medium Priority"
+  });
+
+  if(data.detailed.s1_ref>1) opps.push({
+    title:"Reduce Refrigerant Leakage",
+    desc:"Refrigerant gases have very high global warming potential (GWP). Regular leak checks and preventive maintenance can cut these significantly.",
+    reason:"Refrigerants have GWP ~2000× higher than CO₂.",
+    savings:(data.detailed.s1_ref*0.4).toFixed(1), priority:"Low Priority"
+  });
+
+  if(opps.length===0 && maxSupp) opps.push({
+    title:`Engage ${maxSupp.name} on Sustainability`,
+    desc:"Work with your highest-emitting supplier to optimize loads, switch to lower-emission transport modes, or share a sustainability roadmap.",
+    reason:"Supplier collaboration unlocks upstream improvements.",
+    savings:(maxSupp.emissions*0.15).toFixed(1), priority:"Low Priority"
+  });
+
+  opps.sort((a,b)=>parseFloat(b.savings)-parseFloat(a.savings));
+
+  const result = { analysis_summary: summaries.join(" "), extraction_summary: extraction, opportunities: opps };
+  renderAiInsights(result);
+}
+
+function renderAiInsights(data) {
+  carbonData.aiInsights = data;
+  const cont = document.getElementById('ai-opportunities');
+  cont.innerHTML='';
+  document.getElementById('ai-transparency').textContent = `Analyzed ${carbonData.validRows} vendor rows.`;
+
+  data.opportunities.forEach(opp => {
+    cont.innerHTML += `<div class="opp-item">
+      <h4>${opp.title} <span class="opp-badge">${opp.priority}</span></h4>
+      <p>${opp.desc}</p>
+      <p class="opp-reason">${opp.reason}</p>
+      <div class="opp-save">Estimated savings: −${opp.savings} tCO₂e/yr</div>
+    </div>`;
+  });
+
+  document.getElementById('ai-summary').innerHTML = `
+    <p style="color:var(--blue);font-weight:500;margin-bottom:0.75rem">${data.analysis_summary}</p>
+    <ul style="padding-left:1.25rem;line-height:1.8">${data.extraction_summary.map(i=>`<li>${i}</li>`).join('')}</ul>
+  `;
+}
+
+// ============================
+// REPORT GENERATION
+// ============================
+function generateReportText(payload) {
+  const c = carbonData;
+  const comp = payload ? payload.company : "Company";
+  const yr = payload ? payload.year : "2024";
+  const txt = `
+GHG PROTOCOL — EMISSIONS REPORT
+==============================================
+Organisation: ${comp}
+Reporting Year: ${yr}
+Generated: ${new Date().toLocaleDateString('en-GB')}
+Standard: GHG Protocol Corporate Standard (DEFRA 2024)
+
+SUMMARY
+----------------------------------------------
+Total Emissions:    ${c.total.toFixed(2)} tCO₂e
+  Scope 1:          ${c.scope1.toFixed(2)} tCO₂e
+  Scope 2:          ${c.scope2.toFixed(2)} tCO₂e
+  Scope 3:          ${c.scope3.toFixed(2)} tCO₂e
+
+DATA QUALITY
+----------------------------------------------
+Data Quality Score: ${c.dataQuality}%
+Confidence Score:   ${c.confidence}%
+Valid Vendor Rows:  ${c.validRows} / ${c.totalRows}
+
+SCOPE 1 — DIRECT EMISSIONS
+----------------------------------------------
+Natural Gas:        ${c.detailed.s1_gas.toFixed(2)} tCO₂e
+Mobile (Diesel):    ${c.detailed.s1_diesel.toFixed(2)} tCO₂e
+Fugitive (Refrig.): ${c.detailed.s1_ref.toFixed(2)} tCO₂e
+
+SCOPE 2 — INDIRECT ENERGY
+----------------------------------------------
+Purchased Elec:     ${c.detailed.elec_emissions.toFixed(2)} tCO₂e
+
+SCOPE 3 — UPSTREAM TRANSPORT
+----------------------------------------------
+${c.suppliers.length===0 ? 'No supplier data entered.' : c.suppliers.map(s =>
+  `${s.name.padEnd(22)} | ${s.mode.padEnd(6)} | ${s.location.padEnd(12)} | ${s.emissions.toFixed(2).padStart(8)} tCO₂e`
+).join('\n')}
+
+${carbonData.aiInsights ? `TOP REDUCTION OPPORTUNITIES
+----------------------------------------------
+${carbonData.aiInsights.opportunities.map((o,i)=>`${i+1}. ${o.title} (Save ~${o.savings} tCO₂e)`).join('\n')}
+` : ''}
+==============================================
+Report generated by EcoChain Estimator
+DEFRA 2024 emission factors applied.
+`;
+  carbonData.reportText = txt;
+  document.getElementById('report-content-body').textContent = txt;
+}
+
+// ============================
+// EXPORT
+// ============================
+function setupExport() {
+  document.getElementById('export-txt').addEventListener('click', () => {
+    const blob = new Blob([carbonData.reportText||'No data.'], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download=`GHG_Report_${document.getElementById('company-name').value||'Company'}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  });
+  document.getElementById('copy-csv').addEventListener('click', () => {
+    const rows = [
+      'Scope,tCO2e',
+      `Scope 1,${carbonData.scope1.toFixed(2)}`,
+      `Scope 2,${carbonData.scope2.toFixed(2)}`,
+      `Scope 3,${carbonData.scope3.toFixed(2)}`,
+      `Total,${carbonData.total.toFixed(2)}`,
+      '',
+      'Vendor,Location,Mode,tCO2e',
+      ...carbonData.suppliers.map(s=>`"${s.name}","${s.location}","${s.mode}",${s.emissions.toFixed(2)}`)
+    ].join('\n');
+    navigator.clipboard.writeText(rows).then(()=>showToast('CSV copied!'));
+  });
+}
+
+// ============================
+// TREND ANALYSIS
+// ============================
+function setupTrend() {
+  document.getElementById('load-trend-demo').addEventListener('click', () => {
+    const vals = [340, 385, 415, 390, 450];
+    document.querySelectorAll('.trend-year-val').forEach((inp,i) => inp.value=vals[i]);
+    showToast('Demo trend data loaded!');
+  });
+  document.getElementById('analyze-trend-btn').addEventListener('click', analyzeTrend);
+}
+
+function analyzeTrend() {
+  const inputs = [...document.querySelectorAll('.trend-year-val')];
+  const values = inputs.map(i=>parseFloat(i.value)||null).filter(v=>v!==null);
+
+  if(values.length<2) { showToast('Enter at least 2 years of data.'); return; }
+
+  document.getElementById('trend-results').classList.remove('hidden');
+
+  const labels = [];
+  const base = parseInt(document.getElementById('reporting-year').value||2024) - (values.length-1);
+  values.forEach((_,i) => labels.push(String(base+i)));
+
+  if(charts.trend) charts.trend.destroy();
+  charts.trend = new Chart(document.getElementById('trend-chart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Total Emissions (tCO₂e)', data:values,
+        borderColor:'#22d3a0', backgroundColor:'rgba(34,211,160,0.08)',
+        borderWidth:2.5, pointBackgroundColor:'#22d3a0', pointRadius:5, fill:true, tension:0.35
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8'}}},
+      scales:{
+        x:{ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#64748b'},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+
+  // Compute insights
+  const last = values[values.length-1];
+  const prev = values[values.length-2];
+  const firstVal = values[0];
+  const pctChange = ((last-prev)/prev*100);
+  const totalChange = ((last-firstVal)/firstVal*100);
+  const min = Math.min(...values), max = Math.max(...values);
+  const minIdx = values.indexOf(min), maxIdx = values.indexOf(max);
+  const avg = values.reduce((a,b)=>a+b,0)/values.length;
+  const trend = values[values.length-1]>values[0]?'increasing':'decreasing';
+
+  // Alerts
+  const alertDiv = document.getElementById('trend-alerts');
+  alertDiv.innerHTML='';
+  if(Math.abs(pctChange)>10) {
+    const isUp = pctChange>0;
+    alertDiv.innerHTML = `<div class="alert-box ${isUp?'':'alert-green'}" style="margin-bottom:1rem">
+      Emissions ${isUp?'increased':'decreased'} by <strong>${Math.abs(pctChange).toFixed(1)}%</strong> compared to last year (${prev.toFixed(0)} → ${last.toFixed(0)} tCO₂e)
+    </div>`;
+  }
+
+  // Insights
+  const insightsDiv = document.getElementById('trend-insights');
+  insightsDiv.innerHTML = `
+    <div class="trend-insight">Lowest emissions recorded in <strong>${labels[minIdx]}</strong> at <strong>${min.toFixed(0)} tCO₂e</strong></div>
+    <div class="trend-insight" style="margin-top:0.5rem">Peak emissions in <strong>${labels[maxIdx]}</strong> at <strong>${max.toFixed(0)} tCO₂e</strong></div>
+    <div class="trend-insight" style="margin-top:0.5rem">Average over period: <strong>${avg.toFixed(0)} tCO₂e/year</strong></div>
+    <div class="trend-insight" style="margin-top:0.5rem">Overall trend is <strong>${trend}</strong> (${totalChange>0?'+':''}${totalChange.toFixed(1)}% over the full period)</div>
+  `;
+
+  // Patterns
+  const patternsDiv = document.getElementById('trend-patterns');
+  const netChange = last-firstVal;
+  patternsDiv.innerHTML = `
+    <p><strong>Trend Direction:</strong> Emissions are ${trend} overall, with a net change of ${netChange>0?'+':''}${netChange.toFixed(1)} tCO₂e over ${values.length} years.</p><br>
+    <p><strong>Year-on-year change:</strong> The biggest single-year jump was from <strong>${labels[getPeakJumpIdx(values)]}</strong> to <strong>${labels[getPeakJumpIdx(values)+1]}</strong>.</p><br>
+    ${trend==='increasing' ? `<p><strong>Action needed:</strong> If current growth continues, emissions could reach ~${(last*(1+(pctChange/100))).toFixed(0)} tCO₂e next year. Consider setting a reduction target.</p>` : `<p><strong>Progress:</strong> Your emissions are trending down. Keep it up by reviewing renewable energy and transport efficiency.</p>`}<br>
+    <p><strong>Seasonality tip:</strong> Heating/cooling-intensive seasons often spike Scope 1 & 2. Compare quarterly data to identify seasonal patterns.</p>
+  `;
+}
+
+function getPeakJumpIdx(vals) {
+  let maxJ=0, maxJi=0;
+  for(let i=0;i<vals.length-1;i++) {
+    const j=Math.abs(vals[i+1]-vals[i]);
+    if(j>maxJ) { maxJ=j; maxJi=i; }
+  }
+  return maxJi;
+}
+
+// ============================
+// VEHICLE ECO-ANALYSIS MODULE
+// ============================
+function setupVehicles() {
+  document.getElementById('add-vehicle-btn').addEventListener('click', addVehicleRow);
+  document.getElementById('analyze-vehicles-btn').addEventListener('click', analyzeVehicles);
+  document.getElementById('vehicle-demo-btn').addEventListener('click', () => {
+    document.getElementById('vehicle-list').innerHTML='';
+    [
+      {type:'truck',brand:'Tata',fuel:'diesel',age:12},
+      {type:'truck',brand:'Eicher',fuel:'cng',age:4},
+      {type:'truck',brand:'Ashok Leyland',fuel:'electric',age:2},
+      {type:'van',brand:'Mahindra',fuel:'diesel',age:8},
+    ].forEach(d => addVehicleRow(d));
+    showToast('Demo fleet loaded!');
+  });
+}
+
+function addVehicleRow(data=null) {
+  const row = document.createElement('div');
+  row.className='vehicle-row';
+  row.innerHTML=`<div class="vehicle-row-grid">
+    <div class="field"><label>Vehicle Type</label>
+      <select class="v-vtype">
+        <option value="truck">Truck</option>
+        <option value="van">Van / LCV</option>
+        <option value="bus">Bus</option>
+        <option value="tractor">Tractor</option>
+      </select></div>
+    <div class="field"><label>Brand / Company</label><input type="text" class="v-brand" placeholder="e.g. Tata, Ashok Leyland"></div>
+    <div class="field"><label>Fuel Type</label>
+      <select class="v-fuel">
+        <option value="diesel">Diesel</option>
+        <option value="petrol">Petrol</option>
+        <option value="cng">CNG</option>
+        <option value="electric">Electric</option>
+      </select></div>
+    <div class="field"><label>Vehicle Age (years)</label><input type="number" class="v-age" placeholder="e.g. 5" min="0" step="1"></div>
+    <div class="field"><label>Annual Distance (km)</label><input type="number" class="v-dist" placeholder="e.g. 50000" min="0"></div>
+    <button type="button" class="btn btn-danger remove-vehicle" style="align-self:flex-end;margin-bottom:0">×</button>
+  </div>`;
+  if(data) {
+    row.querySelector('.v-vtype').value=data.type||'truck';
+    row.querySelector('.v-brand').value=data.brand||'';
+    row.querySelector('.v-fuel').value=data.fuel||'diesel';
+    row.querySelector('.v-age').value=data.age||'';
+  }
+  row.querySelector('.remove-vehicle').addEventListener('click',()=>row.remove());
+  document.getElementById('vehicle-list').appendChild(row);
+}
+
+function calcEcoScore(fuel, age) {
+  let base = 100;
+  // Age deduction
+  if(age>=5&&age<10) base -= 25;
+  else if(age>=10) base -= 55;
+  // Fuel adjustment
+  if(fuel==='electric') base = Math.max(base+15, 85);
+  else if(fuel==='cng') base -= 5;
+  else if(fuel==='petrol') base -= 10;
+  else if(fuel==='diesel') base -= 20;
+  return Math.max(Math.min(base, 100), 0);
+}
+
+function getEcoCategory(score) {
+  if(score>=70) return {label:'Eco-Friendly', cls:'eco'};
+  if(score>=40) return {label:'Moderate', cls:'moderate'};
+  return {label:'High Emission', cls:'high'};
+}
+
+function analyzeVehicles() {
+  const rows = document.querySelectorAll('.vehicle-row');
+  const cardsDiv = document.getElementById('vehicle-cards');
+  const emptyMsg = document.getElementById('vehicle-empty-msg');
+  cardsDiv.innerHTML='';
+
+  if(rows.length===0) { emptyMsg.style.display='block'; return; }
+  emptyMsg.style.display='none';
+
+  let oldCount=0, dieselCount=0;
+  rows.forEach(row => {
+    const vtype = row.querySelector('.v-vtype').value;
+    const brand = row.querySelector('.v-brand').value.trim()||'Unknown';
+    const fuel = row.querySelector('.v-fuel').value;
+    const age = parseInt(row.querySelector('.v-age').value)||0;
+    const dist = parseInt(row.querySelector('.v-dist').value)||0;
+
+    if(age>10) oldCount++;
+    if(fuel==='diesel') dieselCount++;
+
+    const score = calcEcoScore(fuel, age);
+    const cat = getEcoCategory(score);
+
+    const issues=[], recs=[];
+
+    // Age-based issues
+    if(age>10) { issues.push(`Vehicle is ${age} years old — significantly outdated.`); recs.push('Replace with a newer model (ideally under 5 years old) to reduce emissions by up to 40%.'); }
+    else if(age>=5) { issues.push(`Vehicle age (${age} yrs) is moderate — efficiency may be declining.`); recs.push('Consider scheduling a full mechanical service to restore fuel efficiency.'); }
+
+    // Fuel-based issues & recs
+    if(fuel==='diesel') {
+      issues.push('Diesel combustion emits high NOₓ and particulate matter.');
+      recs.push('Switch to CNG or electric to reduce emissions by 30–50%.');
+    } else if(fuel==='petrol') {
+      issues.push('Petrol has moderate emissions and lower torque for heavy loads.');
+      recs.push('Consider CNG retrofit for long-haul routes.');
+    } else if(fuel==='cng') {
+      recs.push('CNG is a good choice. Maintain the gas system regularly for peak efficiency.');
+    } else if(fuel==='electric') {
+      recs.push('Keep battery health in check. Schedule annual battery capacity checks.');
+    }
+
+    // Distance-based
+    if(dist>80000&&fuel==='diesel') { issues.push(`High annual mileage (${dist.toLocaleString()} km) with diesel amplifies emissions.`); recs.push('Prioritize this vehicle for electrification given high usage.'); }
+
+    if(issues.length===0) issues.push('No major emission concerns identified.');
+
+    const card = document.createElement('div');
+    card.className='eco-result-card';
+    card.innerHTML=`
+      <div class="eco-card-header">
+        <div>
+          <h3 style="font-size:1rem;color:var(--text);margin-bottom:0.3rem">${brand} — ${vtype.charAt(0).toUpperCase()+vtype.slice(1)}</h3>
+          <span class="eco-badge badge-${cat.cls}">${cat.label}</span>
+        </div>
+        <div class="eco-score-circle ${cat.cls}">
+          <div class="eco-score-num">${score}</div>
+          <div class="eco-score-label">ECO SCORE</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem;font-size:0.8rem;color:var(--muted)">
+        <span>Fuel: <strong style="color:var(--text)">${fuel.toUpperCase()}</strong></span>
+        <span>Age: <strong style="color:var(--text)">${age} years</strong></span>
+        <span>Distance: <strong style="color:var(--text)">${dist>0?dist.toLocaleString()+' km/yr':'Not entered'}</strong></span>
+        <span>Type: <strong style="color:var(--text)">${vtype}</strong></span>
+      </div>
+      <div class="eco-issues">
+        <h4><span class="h2-icon"><i data-lucide="alert-triangle"></i>Key Issues</span></h4>
+        <ul>${issues.map(i=>`<li>${i}</li>`).join('')}</ul>
+      </div>
+      <div class="eco-recs">
+        <h4><span class="h2-icon"><i data-lucide="check-circle"></i>Recommendations</span></h4>
+        <ul>${recs.map(r=>`<li>${r}</li>`).join('')}</ul>
+      </div>
+    `;
+    cardsDiv.appendChild(card);
+  });
+
+  // Fleet summary
+  if(rows.length>1) {
+    let fleetMsg='';
+    if(oldCount>=2) fleetMsg=`${oldCount} of your vehicles are over 10 years old. Fleet modernization is recommended to significantly cut long-term emissions.`;
+    else if(dieselCount===rows.length) fleetMsg='Your entire fleet runs on diesel. Transitioning even 50% to CNG or electric could reduce fleet emissions by 30%+.';
+    else fleetMsg='Your fleet has a mixed fuel profile. Continue transitioning older/diesel vehicles to lower-emission alternatives.';
+
+    const summary = document.createElement('div');
+    summary.className='alert-box alert-green';
+    summary.style.marginTop='1rem';
+    summary.innerHTML=`<strong>Fleet Summary (${rows.length} vehicles):</strong> ${fleetMsg}`;
+    cardsDiv.appendChild(summary);
+  }
+}
+
+// ============================
+// AI CHATBOT
+// ============================
+function setupChat() {
+  const inp = document.getElementById('chat-input');
+  inp.addEventListener('keypress', e => { if(e.key==='Enter') sendChatMessage(); });
+  document.getElementById('chat-send-btn').addEventListener('click', sendChatMessage);
+}
+
+function sendSuggestion(text) {
+  document.getElementById('chat-input').value = text;
+  sendChatMessage();
+}
+
+async function sendChatMessage() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value='';
+
+  appendMsg(text,'user');
+
+  const typing = document.createElement('div');
+  typing.className='msg msg-typing';
+  typing.id='typing-indicator';
+  typing.textContent='EcoChain AI is thinking…';
+  document.getElementById('chat-messages').appendChild(typing);
+  scrollChat();
+
+  const contextSummary = carbonData.total>0
+    ? `Current analysis: ${carbonData.total.toFixed(1)} tCO₂e total (Scope1: ${carbonData.scope1.toFixed(1)}, Scope2: ${carbonData.scope2.toFixed(1)}, Scope3: ${carbonData.scope3.toFixed(1)} tCO₂e). Top supplier: ${carbonData.suppliers[0]?.name||'none'}.`
+    : 'No emissions data has been analyzed yet.';
+
+  chatHistory.push({ role:'user', content: text });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`You are EcoChain AI, a carbon footprint assistant embedded in a Supply Chain Carbon Footprint Estimator app.
+
+Context about the user's current data: ${contextSummary}
+
+Rules:
+- Keep answers short and clear (max 3-4 lines per point).
+- Use simple language, no technical jargon.
+- When discussing emissions, refer to Scope 1 (direct), Scope 2 (energy), and Scope 3 (supply chain) as relevant.
+- If data is available, explain which scope contributes most.
+- Always suggest at least one practical improvement.
+- Do NOT give long explanations.
+- If no emissions data has been analyzed yet, say: "Please run the analysis first to get insights."
+- Do not use emojis in your responses.`,
+        messages: chatHistory
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.find(b=>b.type==='text')?.text || "Sorry, I couldn't process that. Please try again.";
+
+    chatHistory.push({ role:'assistant', content: reply });
+
+    document.getElementById('typing-indicator')?.remove();
+    appendMsg(reply,'bot');
+  } catch(e) {
+    document.getElementById('typing-indicator')?.remove();
+    appendMsg("Sorry, I'm having trouble connecting right now. Please check your connection and try again.",'bot');
+  }
+}
+
+function appendMsg(text, who) {
+  const div = document.createElement('div');
+  div.className=`msg msg-${who}`;
+  div.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
+  document.getElementById('chat-messages').appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ============================
+// TOAST UTILITY
+// ============================
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:2rem;right:2rem;background:var(--panel2);border:1px solid var(--border2);
+    padding:0.75rem 1.25rem;border-radius:10px;font-size:0.88rem;z-index:9999;
+    box-shadow:0 8px 24px rgba(0,0,0,0.3);animation:msgIn 0.2s ease;`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+</script>
+</body>
+</html>
